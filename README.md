@@ -1,4 +1,4 @@
 imdbtag
 =======
 
-tagging script to match movie directories with a movie DB
+A script to name movie files according to imdb (or other DB) results
