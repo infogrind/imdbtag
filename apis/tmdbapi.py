@@ -1,9 +1,12 @@
 #!/usr/bin/python
 
 import sys
+import os
+import ConfigParser
 from movie import Movie
 
 verbose = False
+configfile = '~/.imdbtagrc'
 
 try:
     import tmdb
@@ -12,8 +15,18 @@ except ImportError:
     sys.stderr.write("See github.com/doganaydin/themoviedb\n")
     sys.exit(1)
 
-# Set my api key
-tmdb.configure("xxxx use your own xxxx")
+try:
+    config = ConfigParser.ConfigParser()
+    config.read(os.path.expanduser(configfile))
+    api_key = config.get('general', 'api_key')
+    tmdb.configure(api_key)
+except ConfigParser.NoSectionError:
+    sys.stderr.write("No section [general] found in config file " + configfile +
+            "\n")
+    sys.exit(1)
+except ConfigParser.NoOptionError:
+    sys.stderr.write("No api_key property found in config file %s\n" % configfile)
+    sys.exit(1)
 
 def _selftest():
     global verbose
