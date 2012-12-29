@@ -5,7 +5,14 @@ import sys
 import os
 import getopt
 import re
-from apis.imdbapi import *
+
+# To use TheMovieDB.org
+from apis.tmdbapi import *
+
+# Alternatively, to use IMDb, use the following import instead:
+# (However, know that as of today 2012-12-29, IMDB search doesn't work anymore
+# with IMDbPy.)
+# from apis.imdbapi import *
 
 import warnings
 warnings.filterwarnings('ignore', '.*no module named lxml.*')
