@@ -387,6 +387,7 @@ def imdb_search_movie_offline(s):
 
 def imdb_search_movie_interactive(s):
   results = imdb_query(s)
+  print "Searching for movie '%s'" % s
   print_movie_list(s, results)
   
   # The main loop keeps asking for user input, until the user has made a valid
