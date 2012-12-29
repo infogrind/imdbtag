@@ -13,7 +13,7 @@ except ImportError:
     sys.exit(1)
 
 # Set my api key
-tmdb.configure("api key here")
+tmdb.configure("xxxx use your own xxxx")
 
 def _selftest():
     global verbose
