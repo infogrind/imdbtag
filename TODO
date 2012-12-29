@@ -1,0 +1,3 @@
+TODO:
+- Refactor the two 2movie methods in apis/tmdbapi.py
+- Read api key from ~/.imdbtagrc file or similar
