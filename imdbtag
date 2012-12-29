@@ -5,12 +5,7 @@ import sys
 import os
 import getopt
 import re
-
-try:
-  import imdb
-except ImportError:
-  sys.stderr.write("You bad boy! You need to install the IMDbPY package!\n")
-  sys.exit(1)
+from apis.imdbapi import *
 
 import warnings
 warnings.filterwarnings('ignore', '.*no module named lxml.*')
@@ -30,9 +25,6 @@ quietmode = False
 summary = False
 tvlabel = False
 recoverymode = False
-
-# The imdb object
-i = imdb.IMDb()
 
 # Two lists for notifications in offline mode. The first is for notifications of
 # renamings done, the second for unknown movies (where no IMDb match was found).
@@ -238,7 +230,6 @@ def mkdir_and_move(b, f):
 
 def get_correct_name(b, d):
   """Returns the correct name for the directory ``d``."""
-  global i
 
   debug('Called get_correct_name("' + b + '", "' + d + '").')
 
@@ -329,15 +320,13 @@ def add_title_attributes(d, s):
 
 def movie_by_id(id):
   """Returns a Movie object corresponding to the IMDb id ``id``."""
-  global i
   
   if not offlinemode:
     print "Getting extended movie information..."
   else:
     debug('Getting extended movie information for id ' + id + '...')
-  imdb_m = i.get_movie(id)
   
-  return imdb2movie(imdb_m)
+  return api_get_movie(id)
 
 
 
@@ -725,7 +714,6 @@ def print_movie_list(q, l):
 
 
 def imdb_query(n):
-  global i
 
   in_encoding = sys.stdin.encoding or "UTF-8"
   out_encoding = sys.stdout.encoding or "UTF-8"
@@ -737,25 +725,19 @@ def imdb_query(n):
   try:
     if n.isdigit():
       id = int(n)
-      results = []
-      m = i.get_movie(id)
+      r = []
+      m = api_get_movie(id)
       if m:
-        results.append(m)
+        r.append(m)
     else:
       title = unicode(n, in_encoding, 'replace')
-      results = i.search_movie(title)
+      r = api_search_movie(title)
   except imdb.IMDbError, e:
     errmsg("Probably you're not connected to the Internet.\n")
     errmsg(e + "\n")
     sys.exit(1)
 
-  debug("Found %d possible movies." % len(results))
-
-  # Create a new list from the results, converting each IMDb movie object into
-  # our own movie object.
-  r = []
-  for m in results:
-    r.append(imdb2movie(m))
+  debug("Found %d possible movies." % len(r))
 
   # If there is a movie in r whose name is exactly n, then we move it to the top
   # of the list.
