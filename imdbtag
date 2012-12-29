@@ -423,7 +423,13 @@ def imdb_search_movie_interactive(s):
     # If the user entered a number, take the corresponding entry from the list.
     elif a.isdigit():
       n = int(a)
-      if n < 1 or n > len(results):
+      # Check if the user entered an imdb ID
+      if n > 1000:
+        # Do a search by IMDb ID
+        results = imdb_query(a)
+        print_movie_list(a, results)
+        continue
+      elif n < 1 or n > len(results):
         print "Invalid number."
         continue
   
@@ -727,10 +733,17 @@ def imdb_query(n):
   debug("in_encoding = %s." % in_encoding);
   debug("out_encoding = %s." % out_encoding);
 
-  title = unicode(n, in_encoding, 'replace')
 
   try:
-    results = i.search_movie(title)
+    if n.isdigit():
+      id = int(n)
+      results = []
+      m = i.get_movie(id)
+      if m:
+        results.append(m)
+    else:
+      title = unicode(n, in_encoding, 'replace')
+      results = i.search_movie(title)
   except imdb.IMDbError, e:
     errmsg("Probably you're not connected to the Internet.\n")
     errmsg(e + "\n")
