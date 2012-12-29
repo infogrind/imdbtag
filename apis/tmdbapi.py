@@ -51,7 +51,10 @@ def api_get_movie(id):
     tmdb_m = tmdb.Movie(id)
     return _tmdb2movie(tmdb_m)
 
-def api_search_movie(querystr):
+def api_search_movie(querystr_enc):
+    # Convert to ascii, because of a bug in urlllib (can't search for unicode)
+    querystr = querystr_enc.encode('ascii', 'ignore')
+
     r = []
     movies = tmdb.Movies(querystr, True) # True means only get first page results
     for m in movies.iter_results():
@@ -68,7 +71,7 @@ def _tmdb2movie(tmdb_m):
   idx = ""
 
   return Movie(
-      tmdb_m.get_title().encode(out_encoding, 'replace'),
+      tmdb_m.get_original_title().encode(out_encoding, 'replace'),
       tmdb_m.get_release_date() and tmdb_m.get_release_date()[0:4] or '',
       idx,
       str(tmdb_m.get_id()),
@@ -84,7 +87,7 @@ def _tmdbhash2movie(m):
   idx = ""
 
   return Movie(
-      m['title'].encode(out_encoding, 'replace'),
+      m['original_title'].encode(out_encoding, 'replace'),
       # Only keep first 4 digits of release date
       m['release_date'] and m['release_date'][0:4] or '',
       idx,
