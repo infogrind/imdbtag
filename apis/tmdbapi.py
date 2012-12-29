@@ -58,7 +58,7 @@ def _tmdb2movie(tmdb_m):
       tmdb_m.get_title().encode(out_encoding, 'replace'),
       tmdb_m.get_release_date() and tmdb_m.get_release_date()[0:4] or '',
       idx,
-      tmdb_m.get_id(),
+      str(tmdb_m.get_id()),
       '',  # no "kind" field in tmdb
       tmdb_m.get_vote_average() and str(tmdb_m.get_vote_average()) or ''
       )
@@ -75,7 +75,7 @@ def _tmdbhash2movie(m):
       # Only keep first 4 digits of release date
       m['release_date'] and m['release_date'][0:4] or '',
       idx,
-      m['id'],
+      str(m['id']),
       '',  # no "kind" field in tmdb
       m['vote_average'] and str(m['vote_average']) or ''
       )
