@@ -729,20 +729,15 @@ def imdb_query(n):
   debug("out_encoding = %s." % out_encoding);
 
 
-  try:
-    if n.isdigit():
-      id = int(n)
-      r = []
-      m = api_get_movie(id)
-      if m:
-        r.append(m)
-    else:
-      title = unicode(n, in_encoding, 'replace')
-      r = api_search_movie(title)
-  except imdb.IMDbError, e:
-    errmsg("Probably you're not connected to the Internet.\n")
-    errmsg(e + "\n")
-    sys.exit(1)
+  if n.isdigit():
+    id = int(n)
+    r = []
+    m = api_get_movie(id)
+    if m:
+      r.append(m)
+  else:
+    title = unicode(n, in_encoding, 'replace')
+    r = api_search_movie(title)
 
   debug("Found %d possible movies." % len(r))
 
