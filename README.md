@@ -2,10 +2,26 @@
 
 A script to name movie files according to imdb (or other DB) results
 
+## Installation
+
+So far, only manual installation is available. First clone the repository.
+
+```sh
+$ git clone https://github.com/infogrind/imdbtag.git && cd imdbtag
+```
+
+And run the command for installing the package.
+
+```sh
+$ python setup.py install
+```
+
+(You might have to run this as root, due to the required permissions.)
+
 ## Usage
 
-    imdbscript [options] <directory|file> [, <directory|file>, ...]
-    imdbscript [options] -d <directory>
+    imdbtag [options] <directory|file> [, <directory|file>, ...]
+    imdbtag [options] -d <directory>
     
     The first version renames the files and directories given on the command line.
     The second version renames all files and directories in the directory specified
@@ -35,8 +51,9 @@ A script to name movie files according to imdb (or other DB) results
 
 ## Requirements
 
-- [themoviedb](https://pypi.org/project/tmdb/)
-  available on GitHub)
+The following dependency will be installed automatically if you use the
+installation method recommended above.
+
 - [parse-torrent-name](https://github.com/divijbindlish/parse-torrent-name)
 
 ## Quick API Self-Test

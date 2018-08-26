@@ -877,8 +877,8 @@ def strip_word(s, w):
 
 def usage():
   print \
-"""Usage: imdbscript [options] <directory|file> [, <directory|file>, ...]
-       imdbscript [options] -d <directory>
+"""Usage: imdbtag [options] <directory|file> [, <directory|file>, ...]
+       imdbtag [options] -d <directory>
 
 The first version renames the files and directories given on the command line.
 The second version renames all files and directories in the directory specified
