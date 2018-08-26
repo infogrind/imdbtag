@@ -4,7 +4,19 @@ A script to name movie files according to imdb (or other DB) results
 
 ## Installation
 
-So far, only manual installation is available. First clone the repository.
+### Homebrew
+
+Due to lack of popularity :'( the script is not available in Homebrew's default
+tap. Here's how to get it from the author's personal tap:
+
+```sh
+$ brew tap infogrind/tap
+$ brew install imdbtag
+```
+
+### Manual
+
+First clone the repository.
 
 ```sh
 $ git clone https://github.com/infogrind/imdbtag.git && cd imdbtag
