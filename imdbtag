@@ -809,8 +809,9 @@ def remove_bad_words(s):
   words = ['dvdrip', 'ac3', '\[eng\]', '-axxo', '-fxm', 'divx', 'xvid',
       'unrated', 'retail', 'proper', 'klaxxon', 'tvrip', 'remastered',
       'directors cut', 'director\'s cut', 'internal', '720p', 'hdtv', 
-      r"x\.?264", 'dvdr', '-sys', 'bluray', 'dts', 'hddvd', 'ctrlhd',
-      '-c100', '-esir', '-cinefile'];
+      r"x\.?264", 'dvdr', 'sys', 'bluray', 'dts', 'hddvd', 'ctrlhd',
+      'c100', 'esir', 'cinefile', 'xpost', 'HDChinaWhiteRev', 'HDChina',
+      'WhiteRev'];
 
   for w in words:
     s = strip_word(s, w)
