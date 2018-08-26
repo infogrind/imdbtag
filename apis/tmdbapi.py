@@ -9,7 +9,7 @@ verbose = False
 configfile = '~/.imdbtagrc'
 
 try:
-    import tmdb
+    import tmdb.tmdb as tmdb
 except ImportError:
     sys.stderr.write("You bad boy! You need to install the tmdb package!\n")
     sys.stderr.write("See github.com/doganaydin/themoviedb\n")
