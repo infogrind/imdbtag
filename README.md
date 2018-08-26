@@ -35,10 +35,6 @@ A script to name movie files according to imdb (or other DB) results
 
 ## Requirements
 
+- [themoviedb](https://pypi.org/project/tmdb/)
+  available on GitHub)
 - [parse-torrent-name](https://github.com/divijbindlish/parse-torrent-name)
-
-## Notes
-
-The package includes Dogan Aydin's tmdb package
-(https://pypi.org/project/tmdb/1.0b/), which is as of the time of this writing
-no longer available on GitHub.
