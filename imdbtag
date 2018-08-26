@@ -14,6 +14,15 @@ from apis.tmdbapi import *
 # with IMDbPy.)
 # from apis.imdbapi import *
 
+# We use the useful parse-torrent-name library to parse the movie name; much
+# better way to do it than the old, manual, regex-based way.
+try:
+    import PTN
+except ImportError:
+    sys.stderr.write("You need to install the PTN package!\n")
+    sys.stderr.write("See github.com/divijbindlish/parse-torrent-name\n")
+    sys.exit(1)
+
 import warnings
 warnings.filterwarnings('ignore', '.*no module named lxml.*')
 warnings.filterwarnings('ignore', 'falling back to "beautifulsoup"')
@@ -766,57 +775,11 @@ def move_to_top_if_exists(r, n):
 def clean_name(s):
 
   debug('Determining clean name for "' + s + '"')
-  
-  # Step 1: Convert dots and underscores to spaces.
-  s = dots2spaces(s)
+  info = PTN.parse(s)
+  title = info['title']
+  debug('Clean name is "' + title + '"')
 
-  # Step 2: Remove bad words
-  s = remove_bad_words(s)
-
-  # Step 3: Put year in parentheses if present
-  s = re.sub(r"\s*\[(\d\d\d\d)\]", r" (\1)", s)
-
-  # Step 4: Remove anything in []
-  s = re.sub(r"\[.*\]", "", s)
-
-  # Step 5: If there is a year without parentheses, put them.
-  s = re.sub(r"([^(\d])(\d\d\d\d)([^)\d])", r"\1(\2)\3", s)
-  s = re.sub(r"([^(\d])(\d\d\d\d)$", r"\1(\2)", s)
-
-  # Step 6: Remove everything after year
-  s = re.sub(r"(\(\d\d\d\d\)).*$", r"\1", s)
-
-  # Last step: compact spaces
-  s = re.sub(r"\s+", " ", s)
-
-  debug('Clean name is "' + s + '"')
-
-  return s
-
-
-
-def dots2spaces(s):
-  """Converts all dots and underscores in the string ``s`` to spaces."""
-  s = re.sub(r"([^.])[._]([^.])", r"\1 \2", s)
-  s = re.sub(r"(\.+)\.", r"\1 ", s)
-  return s
-
-  # We could make it a bit better by excluding things such as Dr. or Mr.
-
-
-
-def remove_bad_words(s):
-  words = ['dvdrip', 'ac3', '\[eng\]', '-axxo', '-fxm', 'divx', 'xvid',
-      'unrated', 'retail', 'proper', 'klaxxon', 'tvrip', 'remastered',
-      'directors cut', 'director\'s cut', 'internal', '720p', 'hdtv', 
-      r"x\.?264", 'dvdr', 'sys', 'bluray', 'dts', 'hddvd', 'ctrlhd',
-      'c100', 'esir', 'cinefile', 'xpost', 'HDChinaWhiteRev', 'HDChina',
-      'WhiteRev'];
-
-  for w in words:
-    s = strip_word(s, w)
-
-  return s
+  return title
 
 
 
