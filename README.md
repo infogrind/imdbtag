@@ -38,3 +38,11 @@ A script to name movie files according to imdb (or other DB) results
 - [themoviedb](https://pypi.org/project/tmdb/)
   available on GitHub)
 - [parse-torrent-name](https://github.com/divijbindlish/parse-torrent-name)
+
+## Quick API Self-Test
+
+To verify that the API works properly, perform the follwing steps within a
+python shell:
+
+    import imdbtag
+    imdbtag.apis.tmdbapi._selftest()
