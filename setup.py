@@ -17,7 +17,8 @@ setup(
         "parse-torrent-name",
         "simplejson", # transitive dependency of tmdb
         "fuzzywuzzy", # transitive dependency of tmdb
-        "requests" # transitive dependency of tmdb
+        "requests", # transitive dependency of tmdb
+        "python-Levenshtein" # transitive dependency of tmdb
         ],
     entry_points={
         "console_scripts": ["imdbtag = imdbtag:main"]
