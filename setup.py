@@ -7,8 +7,8 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
 setup(
     name='imdbtag',
     version="1.2",
-    author=__import__('imdbtag').__author__,
-    author_email=__import__('imdbtag').__author_email__,
+    author='Marius Kleiner',
+    author_email='kleiner@gmail.com',
     url='https://github.com/infogrind/imdbtag',
     description='A simple file/directory renamer based on The Movie Database (TMDb)',
     long_description=description,
