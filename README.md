@@ -60,6 +60,16 @@ $ python setup.py install
                    Explicitly specify directory permissions. This works like -F but
                    applies to created directories. E.g., -D 775
 
+## Running Locally
+
+To run the tool locally, e.g. for development, use `pipenv` (see e.g. [this
+page](https://docs.python-guide.org/dev/virtualenvs/) for usage instructions).
+Run it as follows:
+
+```sh
+pipenv install
+pipenv run python -c 'import imdbtag; imdbtag.main()'
+```
 
 ## Requirements
 
