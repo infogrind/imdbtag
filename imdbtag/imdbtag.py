@@ -128,6 +128,8 @@ def process(b, f):
             d = mkdir_and_move(b, f)
             if d != "":
                 tag(b, d)
+    else:
+        status("Skipping %s (neither a directory nor a movie file)." % f)
 
 
 def tag(b, d):
