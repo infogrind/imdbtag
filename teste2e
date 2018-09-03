@@ -1,0 +1,108 @@
+#!/bin/bash
+
+VIRTUALENV="virtualenv"
+MKTEMP="mktemp"
+DEBUG=0
+TESTMOVIE="Fight.Club.1995.BluRay.720p.x264.DTS-SPARKS.mkv"
+EXPECTED="Fight Club (1999)"
+
+################################################################################
+# Functions
+################################################################################
+
+die() {
+	echo "FATAL: $1"
+	abort
+}
+
+debug() {
+	[ "$DEBUG" -ne 0 ] && echo "DEBUG: $1"
+}
+
+verify_command() {
+	CMD="$1"
+	command -v "$CMD" > /dev/null || die "Required command not found: $CMD"
+}
+
+cleanup() {
+	if [ -z "$DEBUG" ] || [ $DEBUG -eq 0 ]; then
+		[ -d "$TEMPDIR" ] && [ ! -z "$TEMPDIR" ] && rm -Rf "$TEMPDIR"
+	else
+		debug "Not deleting $TEMPDIR so you can debug. Run this command \
+			afterwards:"
+		debug "rm -Rf \"$TEMPDIR\""
+	fi
+}
+
+abort() {
+	cleanup
+	exit 1
+}
+
+
+################################################################################
+# Main code starts here
+################################################################################
+
+# In debug mode, also make script under test verbose
+if [ -z "$DEBUG" ] || [ $DEBUG -eq 0 ]; then
+	VERBOSE=""
+else
+	VERBOSE="-v"
+fi
+
+# To ensure temporary directory is removed even in case of CTRL-C
+trap abort SIGINT SIGTERM SIGKILL
+
+# Make sure all the required commands are there
+verify_command "$VIRTUALENV"
+verify_command "$MKTEMP"
+
+# Create a temporary working directory, it is where the virtualenv will be
+# created.
+TEMPDIR=$($MKTEMP -d /tmp/imdbtag.XXXXXXXXXX)
+debug "TEMPDIR: $TEMPDIR"
+[ -d "$TEMPDIR" ] || die "Could not create temporary directory."
+
+
+################################################################################
+# 1) Test set-up
+################################################################################
+
+MOVIEFILE="$TEMPDIR"/"$TESTMOVIE"
+IMDBTAG="$TEMPDIR"/bin/imdbtag
+touch "$MOVIEFILE"
+
+echo "Creating virtual environment"
+"$VIRTUALENV" "$TEMPDIR" 2>&1 | sed 's/^/- /' \
+	|| die "Could not create virtual environment"
+
+echo "Installing imdbtag"
+"$TEMPDIR"/bin/python setup.py install 2>&1 | sed 's/^/- /' \
+	|| die "Could not install application"
+
+
+################################################################################
+# 2) Execute
+################################################################################
+
+echo "Executing $IMDBTAG in offline mode"
+	
+CMD="$IMDBTAG $VERBOSE -os $MOVIEFILE"
+debug "Command: '$CMD'"
+$CMD | sed 's/^/- /' \
+	|| die "Error running $IMDBTAG"
+
+
+################################################################################
+# 3) Verify
+################################################################################
+
+if [ ! -d "$TEMPDIR"/"$EXPECTED" ]; then
+	echo "Test failed: Directory \"$TEMPDIR/$EXPECTED\" not found"
+	abort
+else
+	echo "Test PASSED!"
+fi
+
+cleanup
