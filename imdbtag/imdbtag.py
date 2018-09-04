@@ -311,10 +311,10 @@ def add_title_attributes(d, s):
         # If the name is not empty, we check if the original directory name
         # contained the words "unrated" or "director's cut" and if so then we
         # add the respective word to the title.
-        unrated = (re.search(r"unrated", d, re.I) != None)
-        dircut = (re.search(r"director.?s.?cut", d, re.I) != None)
-        telesync = (re.search(r"telesync", d, re.I) != None)
-        remastered = (re.search(r"remastered", d, re.I) != None)
+        unrated = (re.search(r"unrated", d, re.I) is not None)
+        dircut = (re.search(r"director.?s.?cut", d, re.I) is not None)
+        telesync = (re.search(r"telesync", d, re.I) is not None)
+        remastered = (re.search(r"remastered", d, re.I) is not None)
 
         if unrated and dircut:
             s = s + " (Unrated Director's Cut)"
@@ -772,7 +772,8 @@ def print_offline_notifications():
         print_banner("Renamed directories", w)
         for p in notifications_rename:
             (a, b) = p
-            print limit_string(a, w) + "\n" + sep + limit_string(b, w - len(sep))
+            print(limit_string(a, w) + "\n" + sep +
+                  limit_string(b, w - len(sep)))
 
         print
         print str(len(notifications_rename)) + " directories renamed."
@@ -869,8 +870,8 @@ def parse_options(args):
     global quietmode, summary, tvlabel
     global recoverymode
 
-    # Parse options using Getopt; display an error and exit if options could not
-    # be parsed.
+    # Parse options using Getopt; display an error and exit if options could
+    # not be parsed.
     try:
         opts, args = getopt.getopt(args, "hvifcord:qstF:D:")
     except getopt.GetoptError, err:

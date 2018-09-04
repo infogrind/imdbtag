@@ -10,15 +10,16 @@ setup(
     author='Marius Kleiner',
     author_email='kleiner@gmail.com',
     url='https://github.com/infogrind/imdbtag',
-    description='A simple file/directory renamer based on The Movie Database (TMDb)',
+    description='A simple file/directory renamer based on The Movie Database '
+                + '(TMDb)',
     long_description=description,
     packages=find_packages(),
-    install_requires = [
+    install_requires=[
         "parse-torrent-name",
-        "simplejson", # transitive dependency of tmdb
-        "fuzzywuzzy", # transitive dependency of tmdb
-        "requests", # transitive dependency of tmdb
-        "python-Levenshtein" # transitive dependency of tmdb
+        "simplejson",         # transitive dependency of tmdb
+        "fuzzywuzzy",         # transitive dependency of tmdb
+        "requests",           # transitive dependency of tmdb
+        "python-Levenshtein"  # transitive dependency of tmdb
         ],
     entry_points={
         "console_scripts": ["imdbtag = imdbtag:main"]
