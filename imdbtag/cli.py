@@ -5,6 +5,7 @@ import sys
 import os
 import getopt
 import re
+import logging
 
 # To use TheMovieDB.org
 from apis import tmdbapi
@@ -28,7 +29,6 @@ warnings.filterwarnings('ignore', '.*no module named lxml.*')
 warnings.filterwarnings('ignore', 'falling back to "beautifulsoup"')
 
 # Global options with default values.
-verbose = False
 askmode = False
 clearmode = False
 forcemode = False
@@ -52,11 +52,16 @@ notifications_nb_ignored = 0
 
 
 def main():
+    # Default logging level: info. We don't show "ERROR", "DEBUG", etc., as
+    # this is meant for user consumption.
+    logging.basicConfig(
+            format='%(levelname)s: %(message)s',
+            level=logging.INFO)  # Default logging level
     args = parse_options(sys.argv[1:])
 
     # Make sure argument is present
     if not (len(args) >= 1 or dirmode):
-        errmsg("Syntax error.\n")
+        logging.error("Syntax error.\n")
         usage()
         sys.exit(2)
 
@@ -85,7 +90,7 @@ def process_directory(b):
 
     # Make sure the directory is valid.
     if not is_directory(b):
-        errmsg("Directory " + b + " does not exist.\n")
+        logging.error("Directory " + b + " does not exist.\n")
         return
 
     entries = os.listdir(b)
@@ -99,17 +104,17 @@ def process(b, f):
 
     # First check if the file or directory indicated by f actually exists.
     if not os.path.exists(os.path.join(b, f)):
-        errmsg('"' + f + '" does not exist.')
+        logging.error('"' + f + '" does not exist.')
         return
 
     if is_ignored(b, f):
         notifications_nb_ignored += 1
-        status('Skipping "' + f + '".')
+        logging.info('Skipping "' + f + '".')
 
     # In clear mode, we remove all .imdb etc. files from directories.
     elif clearmode:
         if is_directory(os.path.join(b, f)):
-            debug('Clearning directory "' + f + '".')
+            logging.debug('Clearning directory "' + f + '".')
             clear_directory(b, f)
     # For a directory, we process it unless it contains an ".ignore" file.
     elif is_directory(os.path.join(b, f)):
@@ -119,23 +124,23 @@ def process(b, f):
     # user whether a directory should be made for the file. If yes, we continue
     # by processing the new directory; otherwise we skip the file.
     elif is_movie_file(f):
-        debug("Found movie file without directory: " + f)
+        logging.debug("Found movie file without directory: " + f)
 
         # In recovery mode, only directories can be processed.
         if recoverymode:
-            status('Skipping file "' + f + '" in recovery mode.')
+            logging.info('Skipping file "' + f + '" in recovery mode.')
         else:
             d = mkdir_and_move(b, f)
             if d != "":
                 tag(b, d)
     else:
-        status("Skipping %s (neither a directory nor a movie file)." % f)
+        logging.info("Skipping %s (neither a directory nor a movie file)." % f)
 
 
 def tag(b, d):
 
-    debug('Verifying whether "' + os.path.join(b, d) +
-          '" is a valid directory.')
+    logging.debug('Verifying whether "' + os.path.join(b, d) +
+                  '" is a valid directory.')
     assert(is_directory(os.path.join(b, d)))
 
     # In recovery mode, we first rename the directory to its original name and
@@ -144,22 +149,22 @@ def tag(b, d):
         if has_original_file(b, d):
             o = original_from_file(b, d)
             try:
-                debug('Recovery mode: Clearing directory "' + d +
-                      '" and renaming ' + 'it to "' + o + '".')
+                logging.debug('Recovery mode: Clearing directory "' + d +
+                              '" and renaming ' + 'it to "' + o + '".')
                 clear_directory(b, d)
                 rename_directory(b, d, o)
             except:
-                errmsg('Could not rename "' + d + '" to "' + o +
-                       '" in recovery mode.')
+                logging.error('Could not rename "' + d + '" to "' + o +
+                              '" in recovery mode.')
             else:
                 d = o
         else:
-            status('Skipping "' + d +
-                   '" in recovery mode; no .original file found.')
+            logging.info('Skipping "' + d +
+                         '" in recovery mode; no .original file found.')
             return
 
     n = get_correct_name(b, d)
-    debug('get_correct_name() returned "' + n + '".')
+    logging.debug('get_correct_name() returned "' + n + '".')
 
     # If get_correct_name returns an empty string, the user has indicated that
     # the directory should be ignored. If we are in offline mode, it means that
@@ -194,18 +199,19 @@ def rename_directory(b, d, n):
     new = os.path.join(b, n)
 
     if cmp(old, new) == 0:
-        status("Directory \"" + d + "\" is already named right.")
+        logging.info("Directory \"" + d + "\" is already named right.")
         notifications_nb_unchanged += 1
     elif os.path.exists(new):
-        errmsg('Cannot rename "' + d + '" to "' + n +
-               '", directory already exists.')
+        logging.error('Cannot rename "' + d + '" to "' + n +
+                      '", directory already exists.')
     else:
-        status('Renaming "' + d + '" to "' + n + '".')
+        logging.info('Renaming "' + d + '" to "' + n + '".')
         try:
             os.rename(old, new)
             offline_notice_renamed(d, n)
         except OSError:
-            errmsg('There was an error renaming "' + d + '" to "' + n + '".')
+            logging.error('There was an error renaming "' + d + '" to "' + n
+                          + '".')
         else:
             # Save original directory name, but only if there is not yet an
             # .original file.
@@ -223,7 +229,7 @@ def mkdir_and_move(b, f):
 
     # Create the directory
     d = os.path.join(b, n)
-    debug('Creating directory "' + d + '".')
+    logging.debug('Creating directory "' + d + '".')
     os.mkdir(d)
 
     # Update permissions if set
@@ -234,21 +240,21 @@ def mkdir_and_move(b, f):
     # no good 'move' interface in python. (We cannot use shutils.move, since
     # this would first copy the source to the destination and then delete the
     # source, which takes a long time with movie files.)
-    debug('Moving "' + f + '" to "' + n + '".')
+    logging.debug('Moving "' + f + '" to "' + n + '".')
     r = os.system('mv "' + os.path.join(b, f) + '" "' + d + '"')
 
     # Check OS return code.
     if r == 0:
         return n
     else:
-        errmsg("Could not create directory \"" + d + "\".")
+        logging.error("Could not create directory \"" + d + "\".")
         return ""
 
 
 def get_correct_name(b, d):
     """Returns the correct name for the directory ``d``."""
 
-    debug('Called get_correct_name("' + b + '", "' + d + '").')
+    logging.debug('Called get_correct_name("' + b + '", "' + d + '").')
 
     # This method determines the movie name as follows.
     # - If no .name file exists or if we are in force mode, we look up the
@@ -263,9 +269,10 @@ def get_correct_name(b, d):
 
     if (not has_name_file(b, d)) or forcemode:
         if has_name_file(b, d):
-            debug('Looking up "' + d + '" because force mode is enabled.')
+            logging.debug('Looking up "' + d +
+                          '" because force mode is enabled.')
         else:
-            debug('No name file found for "' + d + '", looking up.')
+            logging.debug('No name file found for "' + d + '", looking up.')
 
         n = get_movie_for_directory(b, d)
 
@@ -273,7 +280,7 @@ def get_correct_name(b, d):
         if not n == "":
             n = add_title_attributes(d, n)
     else:
-        debug('Using name from file for "' + d + '".')
+        logging.debug('Using name from file for "' + d + '".')
         n = name_from_file(b, d)
 
     # Write the name to the file if it is not empty.
@@ -286,7 +293,7 @@ def get_correct_name(b, d):
 
 def get_movie_for_directory(b, d):
         if not forcemode and has_imdb_file(b, d):
-            debug('Found .imdb file for "' + d + '".')
+            logging.debug('Found .imdb file for "' + d + '".')
             # We look up the movie on imdb according to its ID.  Because there
             # is an .imdb file but no .name file, it is reasonable to assume
             # that the script was already run once and the user chose not to
@@ -294,7 +301,8 @@ def get_movie_for_directory(b, d):
             m = movie_by_id(id_from_file(b, d))
             n = m.nice_title()
         else:
-            debug('Looking up "' + d + '" on IMDb with the user\'s help.')
+            logging.debug('Looking up "' + d +
+                          '" on IMDb with the user\'s help.')
             # Ask user to establish movie and custom name.
             m, n = movie_by_name(clean_name(d))
 
@@ -338,7 +346,8 @@ def movie_by_id(id):
     if not offlinemode:
         print "Getting extended movie information..."
     else:
-        debug('Getting extended movie information for id ' + id + '...')
+        logging.debug('Getting extended movie information for id ' +
+                      id + '...')
 
     return tmdbapi.api_get_movie(id)
 
@@ -379,12 +388,12 @@ def imdb_search_movie(s):
 def imdb_search_movie_offline(s):
     results = imdb_query(s)
     if len(results) == 0:
-        debug('Offline mode: No match found on IMDb for "' + s + '".')
+        logging.debug('Offline mode: No match found on IMDb for "' + s + '".')
         return None
     else:
         m = results[0]
-        debug('Returning IMDb match "' + m.nice_title() + '" for query "' + s +
-              '".')
+        logging.debug('Returning IMDb match "' + m.nice_title() +
+                      '" for query "' + s + '".')
         return m
 
 
@@ -536,7 +545,7 @@ def split_filename(f):
 
 
 def mark_ignored(b, d):
-    debug('Marking directory "' + d + '" as ignored.')
+    logging.debug('Marking directory "' + d + '" as ignored.')
     touch_file(os.path.join(b, d, '.ignore'))
 
 
@@ -569,15 +578,16 @@ def is_writable(b, d):
     p = os.path.join(b, d)
     b = os.access(p, os.W_OK)
     if b:
-        debug('Path "' + p + '" has write permission.')
+        logging.debug('Path "' + p + '" has write permission.')
     else:
-        debug('Path "' + p + '" DOES NOT have write permission.')
+        logging.debug('Path "' + p + '" DOES NOT have write permission.')
 
     return b
 
 
 def has_file(b, d, n):
-    debug('Checking existence of file "' + os.path.join(b, d, n) + '".')
+    logging.debug('Checking existence of file "' +
+                  os.path.join(b, d, n) + '".')
     return os.path.exists(os.path.join(b, d, n))
 
 
@@ -599,7 +609,7 @@ def original_from_file(b, d):
 
 def text_from_file(b, d, f):
     fullpath = os.path.join(b, d, f)
-    debug('Reading text from file "' + fullpath + '".')
+    logging.debug('Reading text from file "' + fullpath + '".')
     assert(os.path.exists(fullpath))
     fh = open(fullpath, 'r')
     s = fh.readline().rstrip('\n')
@@ -625,13 +635,13 @@ def set_original_file(b, d, s):
 
 def set_file(b, d, f, s):
     fullpath = os.path.join(b, d, f)
-    debug('Writing text "' + s + '" to file "' + fullpath + '".')
+    logging.debug('Writing text "' + s + '" to file "' + fullpath + '".')
     try:
         fh = open(fullpath, 'w')
         fh.write(s + '\n')
         fh.close()
     except IOError:
-        errmsg('Error: Could not write to file "' + fullpath + '".')
+        logging.error('Error: Could not write to file "' + fullpath + '".')
     else:
         if fileperm is not None:
             change_permissions(fullpath, fileperm)
@@ -662,7 +672,7 @@ def touch_file(f):
         fh = open(f, 'w')
         fh.close()
     except IOError:
-        errmsg('Error: Could not write to file "' + f + '".')
+        logging.error('Error: Could not write to file "' + f + '".')
     else:
         if fileperm is not None:
             change_permissions(f, fileperm)
@@ -672,7 +682,7 @@ def change_permissions(p, perm):
     try:
         os.chmod(p, perm)
     except OSError:
-        errmsg('Unable to change permissions of "' + p + '".')
+        logging.error('Unable to change permissions of "' + p + '".')
 
 
 def print_movie_list(q, l):
@@ -690,7 +700,7 @@ def print_movie_list(q, l):
             try:
                 t = t + " (" + k + ")"
             except UnicodeDecodeError:
-                errmsg('There was an Unicode problem')
+                logging.error('There was an Unicode problem')
 
         print "%2d: %s" % (c, t)
 
@@ -700,8 +710,8 @@ def imdb_query(n):
     in_encoding = sys.stdin.encoding or "UTF-8"
     out_encoding = sys.stdout.encoding or "UTF-8"
 
-    debug("in_encoding = %s." % in_encoding)
-    debug("out_encoding = %s." % out_encoding)
+    logging.debug("in_encoding = %s." % in_encoding)
+    logging.debug("out_encoding = %s." % out_encoding)
 
     if n.isdigit():
         id = int(n)
@@ -713,7 +723,7 @@ def imdb_query(n):
         title = unicode(n, in_encoding, 'replace')
         r = tmdbapi.api_search_movie(title)
 
-    debug("Found %d possible movies." % len(r))
+    logging.debug("Found %d possible movies." % len(r))
 
     # If there is a movie in r whose name is exactly n, then we move it to the
     # top of the list.
@@ -728,7 +738,7 @@ def move_to_top_if_exists(r, n):
         if c > 0 and m.nice_title() == n:
             mm = r.pop(c)
             r.insert(0, mm)
-            debug('Found "' + n + '" in the list, moving to top.')
+            logging.debug('Found "' + n + '" in the list, moving to top.')
             break
         c += 1
 
@@ -737,10 +747,10 @@ def move_to_top_if_exists(r, n):
 
 def clean_name(s):
 
-    debug('Determining clean name for "' + s + '"')
+    logging.debug('Determining clean name for "' + s + '"')
     info = PTN.parse(s)
     title = info['title']
-    debug('Clean name is "' + title + '"')
+    logging.debug('Clean name is "' + title + '"')
 
     return title
 
@@ -864,7 +874,7 @@ Options: -h      Display help text.
 def parse_options(args):
 
     # Access global variables
-    global verbose, forcemode, askmode, dirmode
+    global forcemode, askmode, dirmode
     global directory, offlinemode, clearmode
     global fileperm, dirperm
     global quietmode, summary, tvlabel
@@ -875,7 +885,7 @@ def parse_options(args):
     try:
         opts, args = getopt.getopt(args, "hvifcord:qstF:D:")
     except getopt.GetoptError, err:
-        errmsg(str(err))
+        logging.error(str(err))
         usage()
         sys.exit(2)
 
@@ -887,87 +897,74 @@ def parse_options(args):
 
         if opt == "-c":
             clearmode = True
-            debug('Clear mode enabled.')
+            logging.debug('Clear mode enabled.')
 
         elif opt == "-v":
-            verbose = True
-            debug('Verbose mode enabled.')
+            logging.getLogger().setLevel(logging.DEBUG)
+            logging.info('Debug mode enabled.')
 
         elif opt == "-i":
             askmode = True
-            debug('Ask mode enabled.')
+            logging.debug('Ask mode enabled.')
 
         elif opt == "-f":
-            debug('Force mode enabled.')
+            logging.debug('Force mode enabled.')
             forcemode = True
 
         elif opt == "-o":
-            debug('Offline mode enabled.')
+            logging.debug('Offline mode enabled.')
             offlinemode = True
 
         elif opt == "-q":
-            debug('Quiet mode enabled.')
-            quietmode = True
+            logging.debug('Quiet mode enabled.')
+            logging.getLogger().setLevel(logging.WARN)
 
         elif opt == "-r":
-            debug('Recovery mode enabled.')
+            logging.debug('Recovery mode enabled.')
             recoverymode = True
 
         elif opt == "-s":
-            debug('Summary enabled')
+            logging.debug('Summary enabled')
             summary = True
 
         elif opt == "-t":
-            debug('TV series label enabled')
+            logging.debug('TV series label enabled')
             tvlabel = True
 
         elif opt == "-d":
             directory = val
-            debug('Directory mode for directory "' + directory + '".')
+            logging.debug('Directory mode for directory "' + directory + '".')
             dirmode = True
 
         elif opt == "-F":
             try:
                 fileperm = int(val, 8)
             except ValueError:
-                errmsg('Illegal file permission specification.')
+                logging.error('Illegal file permission specification.')
                 fileperm = None
             else:
-                debug('Setting file permissions to ' + oct(fileperm))
+                logging.debug('Setting file permissions to ' + oct(fileperm))
 
         elif opt == "-D":
             try:
                 dirperm = int(val, 8)
             except ValueError:
-                errmsg('Illegal directory permission specification.')
+                logging.error('Illegal directory permission specification.')
                 dirperm = None
             else:
-                debug('Setting directory permissions to ' + oct(dirperm))
+                logging.debug('Setting directory permissions to ' +
+                              oct(dirperm))
 
         else:
             assert False, "unhandled option"
 
         # Recovery mode and offline mode are incompatible.
         if recoverymode and offlinemode:
-            errmsg('Recovery mode and offline mode are incompatible.')
+            logging.error('Recovery mode and offline mode are incompatible.')
             usage()
             sys.exit(2)
 
     return args
-
-
-def debug(s):
-    if verbose:
-        sys.stderr.write("DEBUG: " + s + "\n")
-
-
-def status(s):
-    if not quietmode:
-        print(s)
-
-
-def errmsg(s):
-    sys.stderr.write("ERROR: " + s + "\n")
 
 
 def is_directory(d):
