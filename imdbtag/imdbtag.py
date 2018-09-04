@@ -80,7 +80,7 @@ def process_directory(b):
     """Process the directory ``b``"""
 
     # Make sure the directory is valid.
-    if not is_directory(b):
+    if not _is_directory(b):
         logging.error("Directory " + b + " does not exist.\n")
         return
 
@@ -98,52 +98,52 @@ def process(b, f):
         logging.error('"' + f + '" does not exist.')
         return
 
-    if is_ignored(b, f):
+    if _is_ignored(b, f):
         notifications_nb_ignored += 1
         logging.info('Skipping "' + f + '".')
 
     # In clear mode, we remove all .imdb etc. files from directories.
     elif basicConfig['clearmode']:
-        if is_directory(os.path.join(b, f)):
+        if _is_directory(os.path.join(b, f)):
             logging.debug('Clearning directory "' + f + '".')
-            clear_directory(b, f)
+            _clear_directory(b, f)
     # For a directory, we process it unless it contains an ".ignore" file.
-    elif is_directory(os.path.join(b, f)):
-        tag(b, f)
+    elif _is_directory(os.path.join(b, f)):
+        _tag(b, f)
 
     # If there is a movie file that is not in its own directory, we ask the
     # user whether a directory should be made for the file. If yes, we continue
     # by processing the new directory; otherwise we skip the file.
-    elif is_movie_file(f):
+    elif _is_movie_file(f):
         logging.debug("Found movie file without directory: " + f)
 
         # In recovery mode, only directories can be processed.
         if basicConfig['recoverymode']:
             logging.info('Skipping file "' + f + '" in recovery mode.')
         else:
-            d = mkdir_and_move(b, f)
+            d = _mkdir_and_move(b, f)
             if d != "":
-                tag(b, d)
+                _tag(b, d)
     else:
         logging.info("Skipping %s (neither a directory nor a movie file)." % f)
 
 
-def tag(b, d):
+def _tag(b, d):
 
     logging.debug('Verifying whether "' + os.path.join(b, d) +
                   '" is a valid directory.')
-    assert(is_directory(os.path.join(b, d)))
+    assert(_is_directory(os.path.join(b, d)))
 
     # In recovery mode, we first rename the directory to its original name and
     # then clear all special files (except the .original file).
     if basicConfig['recoverymode']:
-        if has_original_file(b, d):
-            o = original_from_file(b, d)
+        if _has_original_file(b, d):
+            o = _original_from_file(b, d)
             try:
                 logging.debug('Recovery mode: Clearing directory "' + d +
                               '" and renaming ' + 'it to "' + o + '".')
-                clear_directory(b, d)
-                rename_directory(b, d, o)
+                _clear_directory(b, d)
+                _rename_directory(b, d, o)
             except OSError:
                 logging.error('Could not rename "' + d + '" to "' + o +
                               '" in recovery mode.')
@@ -154,36 +154,36 @@ def tag(b, d):
                          '" in recovery mode; no .original file found.')
             return
 
-    n = get_correct_name(b, d)
-    logging.debug('get_correct_name() returned "' + n + '".')
+    n = _get_correct_name(b, d)
+    logging.debug('_get_correct_name() returned "' + n + '".')
 
     # If get_correct_name returns an empty string, the user has indicated that
     # the directory should be ignored. If we are in offline mode, it means that
     # no movie was found on IMDb.
     if n == "":
         if basicConfig['offlinemode']:
-            offline_notice_unknown(d)
+            _offline_notice_unknown(d)
         else:
-            mark_ignored(b, d)
+            _mark_ignored(b, d)
     else:
         # We can go ahead and rename.
-        rename_directory(b, d, n)
+        _rename_directory(b, d, n)
 
 
-def clear_directory(b, d):
-    assert(is_directory(os.path.join(b, d)))
+def _clear_directory(b, d):
+    assert(_is_directory(os.path.join(b, d)))
 
-    if is_ignored(b, d):
-        remove_ignore_file(b, d)
-    if has_imdb_file(b, d):
-        remove_imdb_file(b, d)
-    if has_name_file(b, d):
-        remove_name_file(b, d)
-    if has_rating_file(b, d):
-        remove_rating_file(b, d)
+    if _is_ignored(b, d):
+        _remove_ignore_file(b, d)
+    if _has_imdb_file(b, d):
+        _remove_imdb_file(b, d)
+    if _has_name_file(b, d):
+        _remove_name_file(b, d)
+    if _has_rating_file(b, d):
+        _remove_rating_file(b, d)
 
 
-def rename_directory(b, d, n):
+def _rename_directory(b, d, n):
     global notifications_nb_unchanged
 
     old = os.path.join(b, d)
@@ -199,20 +199,20 @@ def rename_directory(b, d, n):
         logging.info('Renaming "' + d + '" to "' + n + '".')
         try:
             os.rename(old, new)
-            offline_notice_renamed(d, n)
+            _offline_notice_renamed(d, n)
         except OSError:
             logging.error('There was an error renaming "' + d + '" to "' + n
                           + '".')
         else:
             # Save original directory name, but only if there is not yet an
             # .original file.
-            if not has_original_file(b, n):
-                set_original_file(b, n, d)
+            if not _has_original_file(b, n):
+                _set_original_file(b, n, d)
 
 
-def mkdir_and_move(b, f):
-    n, e = split_filename(f)
-    if basicConfig['askmode'] and not confirm(
+def _mkdir_and_move(b, f):
+    n, e = _split_filename(f)
+    if basicConfig['askmode'] and not _confirm(
             prompt='Do you want to move the file "' + f +
             '" to the directory "' + n + '"? ',
             resp=True):
@@ -225,7 +225,7 @@ def mkdir_and_move(b, f):
 
     # Update permissions if set
     if basicConfig['dirperm'] is not None:
-        change_permissions(d, basicConfig['dirperm'])
+        _change_permissions(d, basicConfig['dirperm'])
 
     # Move the file. We are doing this using a system command, since there is
     # no good 'move' interface in python. (We cannot use shutils.move, since
@@ -242,71 +242,71 @@ def mkdir_and_move(b, f):
         return ""
 
 
-def get_correct_name(b, d):
+def _get_correct_name(b, d):
     """Returns the correct name for the directory ``d``."""
 
-    logging.debug('Called get_correct_name("' + b + '", "' + d + '").')
+    logging.debug('Called _get_correct_name("' + b + '", "' + d + '").')
 
     # This method determines the movie name as follows.
     # - If no .name file exists or if we are in force mode, we look up the
-    #   movie using get_movie_for_directory().
+    #   movie using _get_movie_for_directory().
     # - Otherwise, we are not in force mode and a .name file exists, so we can
     #   take the name from that file.
-    # If get_movie_for_directory() returns an empty string, it means that no
+    # If _get_movie_for_directory() returns an empty string, it means that no
     # movie could be determined for this directory, so we mark it as ignored in
     # future (unless we are in offline mode, in which case we need to add it to
     # the list of notifications).
     # Otherwise, we set the .name file with the returned name.
 
-    if (not has_name_file(b, d)) or basicConfig['forcemode']:
-        if has_name_file(b, d):
+    if (not _has_name_file(b, d)) or basicConfig['forcemode']:
+        if _has_name_file(b, d):
             logging.debug('Looking up "' + d +
                           '" because force mode is enabled.')
         else:
             logging.debug('No name file found for "' + d + '", looking up.')
 
-        n = get_movie_for_directory(b, d)
+        n = _get_movie_for_directory(b, d)
 
         # We need to add "Unrated", etc. if present in the original title.
         if not n == "":
-            n = add_title_attributes(d, n)
+            n = _add_title_attributes(d, n)
     else:
         logging.debug('Using name from file for "' + d + '".')
-        n = name_from_file(b, d)
+        n = _name_from_file(b, d)
 
     # Write the name to the file if it is not empty.
     if not n == "":
-        set_name_file(b, d, n)
+        _set_name_file(b, d, n)
 
     # Finally we return the name.
     return n
 
 
-def get_movie_for_directory(b, d):
-        if not basicConfig['forcemode'] and has_imdb_file(b, d):
+def _get_movie_for_directory(b, d):
+        if not basicConfig['forcemode'] and _has_imdb_file(b, d):
             logging.debug('Found .imdb file for "' + d + '".')
             # We look up the movie on imdb according to its ID.  Because there
             # is an .imdb file but no .name file, it is reasonable to assume
             # that the script was already run once and the user chose not to
             # give a custom name.
-            m = movie_by_id(id_from_file(b, d))
+            m = _movie_by_id(_id_from_file(b, d))
             n = m.nice_title()
         else:
             logging.debug('Looking up "' + d +
                           '" on IMDb with the user\'s help.')
             # Ask user to establish movie and custom name.
-            m, n = movie_by_name(clean_name(d))
+            m, n = _movie_by_name(_clean_name(d))
 
         # If a corresponding IMDb movie was found, then we set the .imdb file
         # and the rating file.
         if m is not None:
-            set_imdb_file(b, d, m.id)
-            set_rating_file(b, d, m.rating)
+            _set_imdb_file(b, d, m.id)
+            _set_rating_file(b, d, m.rating)
 
         return n
 
 
-def add_title_attributes(d, s):
+def _add_title_attributes(d, s):
         # If the name is not empty, we check if the original directory name
         # contained the words "unrated" or "director's cut" and if so then we
         # add the respective word to the title.
@@ -331,7 +331,7 @@ def add_title_attributes(d, s):
         return s
 
 
-def movie_by_id(id):
+def _movie_by_id(id):
     """Returns a Movie object corresponding to the IMDb id ``id``."""
 
     if not basicConfig['offlinemode']:
@@ -343,14 +343,14 @@ def movie_by_id(id):
     return tmdbapi.api_get_movie(id)
 
 
-def movie_by_name(s):
+def _movie_by_name(s):
 
-    m = imdb_search_movie(s)
+    m = _imdb_search_movie(s)
 
     # We give the user the opportunity to add a custom title, but not in
     # offline mode.
     if not basicConfig['offlinemode']:
-        n = ask_custom_title(m)
+        n = _ask_custom_title(m)
     else:
         n = ""
 
@@ -359,25 +359,25 @@ def movie_by_name(s):
     if n == "" and m is not None:
         n = m.nice_title()
 
-    # Before we return the movie, we fetch it again using movie_by_id() in
+    # Before we return the movie, we fetch it again using _movie_by_id() in
     # order to get the extended information such as the rating, unless speedy
     # mode is actived.
     if m is not None:
-        return movie_by_id(m.id), n
+        return _movie_by_id(m.id), n
     else:
         return m, n
 
 
-def imdb_search_movie(s):
+def _imdb_search_movie(s):
 
     if basicConfig['offlinemode']:
-        return imdb_search_movie_offline(s)
+        return _imdb_search_movie_offline(s)
     else:
-        return imdb_search_movie_interactive(s)
+        return _imdb_search_movie_interactive(s)
 
 
-def imdb_search_movie_offline(s):
-    results = imdb_query(s)
+def _imdb_search_movie_offline(s):
+    results = _imdb_query(s)
     if len(results) == 0:
         logging.debug('Offline mode: No match found on IMDb for "' + s + '".')
         return None
@@ -388,10 +388,10 @@ def imdb_search_movie_offline(s):
         return m
 
 
-def imdb_search_movie_interactive(s):
-    results = imdb_query(s)
+def _imdb_search_movie_interactive(s):
+    results = _imdb_query(s)
     print "Searching for movie '%s'" % s
-    print_movie_list(s, results)
+    _print_movie_list(s, results)
 
     # The main loop keeps asking for user input, until the user has made a
     # valid choice, in which case we break from the loop or exit the function.
@@ -427,8 +427,8 @@ def imdb_search_movie_interactive(s):
             # Check if the user entered an imdb ID
             if n > 1000:
                 # Do a search by IMDb ID
-                results = imdb_query(a)
-                print_movie_list(a, results)
+                results = _imdb_query(a)
+                _print_movie_list(a, results)
                 continue
             elif n < 1 or n > len(results):
                 print "Invalid number."
@@ -438,21 +438,21 @@ def imdb_search_movie_interactive(s):
             sys.stdout.write('You selected "' + m.nice_title() +
                              '". Is this correct? ')
 
-            if confirm(prompt="", resp=True):
+            if _confirm(prompt="", resp=True):
                 break
             else:
                 continue
 
         else:
             # Do a new search.
-            results = imdb_query(a)
-            print_movie_list(a, results)
+            results = _imdb_query(a)
+            _print_movie_list(a, results)
             continue
 
     return m
 
 
-def ask_custom_title(m):
+def _ask_custom_title(m):
     while True:
         if m is None:
             print """
@@ -469,7 +469,7 @@ def ask_custom_title(m):
 
         if n != "":
             sys.stdout.write('You entered "' + n + '". Please confirm ')
-            if confirm(prompt="", resp=True):
+            if _confirm(prompt="", resp=True):
                 break
         else:
             # Name is empty.
@@ -477,7 +477,7 @@ def ask_custom_title(m):
                 sys.stdout.write('You have chosen to ignore this directory. ' +
                                  'Please confirm ')
 
-                if confirm(prompt="", resp=True):
+                if _confirm(prompt="", resp=True):
                     break
             else:
                 # No confirmation needed here.
@@ -486,7 +486,7 @@ def ask_custom_title(m):
     return n
 
 
-def imdb2movie(imdb_m):
+def _imdb2movie(imdb_m):
     """Converts a movie object of the IMDbpy package into our own movie
     class."""
     out_encoding = sys.stdout.encoding or "UTF-8"
@@ -508,26 +508,26 @@ def imdb2movie(imdb_m):
             )
 
 
-def is_movie_file(f):
+def _is_movie_file(f):
     # Simple check based on extension
     movieext = ['avi', 'mpg', 'mp4', 'mpeg', 'divx', 'mov', 'mkv', 'm4v']
     for e in movieext:
-        if has_extension(f, e):
+        if _has_extension(f, e):
             return True
 
     return False
 
 
-def has_extension(f, e):
-    return get_extension(f).lower() == e.lower()
+def _has_extension(f, e):
+    return _get_extension(f).lower() == e.lower()
 
 
-def get_extension(f):
-    n, e = split_filename(f)
+def _get_extension(f):
+    n, e = _split_filename(f)
     return e
 
 
-def split_filename(f):
+def _split_filename(f):
     m = re.match(r"(.*)\.([\w]{1,3})", f)
     if m is None:
         return f, ""
@@ -535,70 +535,59 @@ def split_filename(f):
         return m.group(1), m.group(2)
 
 
-def mark_ignored(b, d):
+def _mark_ignored(b, d):
     logging.debug('Marking directory "' + d + '" as ignored.')
-    touch_file(os.path.join(b, d, '.ignore'))
+    _touch_file(os.path.join(b, d, '.ignore'))
 
 
-def is_ignored(b, f):
+def _is_ignored(b, f):
     # By default, we ignore directories that start with a dot or a colon.
     if re.match(r"^(\.|:).*", f):
         return True
 
     # Otherwise, a directory is ignored if it contains an .ignore file.
-    return is_directory(os.path.join(b, f)) and has_file(b, f, '.ignore')
+    return _is_directory(os.path.join(b, f)) and _has_file(b, f, '.ignore')
 
 
-def has_name_file(b, d):
-    return has_file(b, d, '.name')
+def _has_name_file(b, d):
+    return _has_file(b, d, '.name')
 
 
-def has_imdb_file(b, d):
-    return has_file(b, d, '.imdb')
+def _has_imdb_file(b, d):
+    return _has_file(b, d, '.imdb')
 
 
-def has_rating_file(b, d):
-    return has_file(b, d, '.rating')
+def _has_rating_file(b, d):
+    return _has_file(b, d, '.rating')
 
 
-def has_original_file(b, d):
-    return has_file(b, d, '.original')
+def _has_original_file(b, d):
+    return _has_file(b, d, '.original')
 
 
-def is_writable(b, d):
-    p = os.path.join(b, d)
-    b = os.access(p, os.W_OK)
-    if b:
-        logging.debug('Path "' + p + '" has write permission.')
-    else:
-        logging.debug('Path "' + p + '" DOES NOT have write permission.')
-
-    return b
-
-
-def has_file(b, d, n):
+def _has_file(b, d, n):
     logging.debug('Checking existence of file "' +
                   os.path.join(b, d, n) + '".')
     return os.path.exists(os.path.join(b, d, n))
 
 
-def name_from_file(b, d):
-    return text_from_file(b, d, '.name')
+def _name_from_file(b, d):
+    return _text_from_file(b, d, '.name')
 
 
-def id_from_file(b, d):
-    return re.sub('^tt', '', text_from_file(b, d, '.imdb'))
+def _id_from_file(b, d):
+    return re.sub('^tt', '', _text_from_file(b, d, '.imdb'))
 
 
-def rating_from_file(b, d):
-    return text_from_file(b, d, '.rating')
+def _rating_from_file(b, d):
+    return _text_from_file(b, d, '.rating')
 
 
-def original_from_file(b, d):
-    return text_from_file(b, d, '.original')
+def _original_from_file(b, d):
+    return _text_from_file(b, d, '.original')
 
 
-def text_from_file(b, d, f):
+def _text_from_file(b, d, f):
     fullpath = os.path.join(b, d, f)
     logging.debug('Reading text from file "' + fullpath + '".')
     assert(os.path.exists(fullpath))
@@ -608,23 +597,23 @@ def text_from_file(b, d, f):
     return s
 
 
-def set_name_file(b, d, n):
-    set_file(b, d, '.name', n)
+def _set_name_file(b, d, n):
+    _set_file(b, d, '.name', n)
 
 
-def set_imdb_file(b, d, i):
-    set_file(b, d, '.imdb', "tt" + i)
+def _set_imdb_file(b, d, i):
+    _set_file(b, d, '.imdb', "tt" + i)
 
 
-def set_rating_file(b, d, r):
-    set_file(b, d, '.rating', r)
+def _set_rating_file(b, d, r):
+    _set_file(b, d, '.rating', r)
 
 
-def set_original_file(b, d, s):
-    set_file(b, d, '.original', s)
+def _set_original_file(b, d, s):
+    _set_file(b, d, '.original', s)
 
 
-def set_file(b, d, f, s):
+def _set_file(b, d, f, s):
     fullpath = os.path.join(b, d, f)
     logging.debug('Writing text "' + s + '" to file "' + fullpath + '".')
     try:
@@ -635,30 +624,30 @@ def set_file(b, d, f, s):
         logging.error('Error: Could not write to file "' + fullpath + '".')
     else:
         if basicConfig['fileperm'] is not None:
-            change_permissions(fullpath, basicConfig['fileperm'])
+            _change_permissions(fullpath, basicConfig['fileperm'])
 
 
-def remove_ignore_file(b, d):
-    remove_file(b, d, ".ignore")
+def _remove_ignore_file(b, d):
+    _remove_file(b, d, ".ignore")
 
 
-def remove_imdb_file(b, d):
-    remove_file(b, d, ".imdb")
+def _remove_imdb_file(b, d):
+    _remove_file(b, d, ".imdb")
 
 
-def remove_name_file(b, d):
-    remove_file(b, d, ".name")
+def _remove_name_file(b, d):
+    _remove_file(b, d, ".name")
 
 
-def remove_rating_file(b, d):
-    remove_file(b, d, ".rating")
+def _remove_rating_file(b, d):
+    _remove_file(b, d, ".rating")
 
 
-def remove_file(b, d, n):
+def _remove_file(b, d, n):
     os.remove(os.path.join(b, d, n))
 
 
-def touch_file(f):
+def _touch_file(f):
     try:
         fh = open(f, 'w')
         fh.close()
@@ -666,17 +655,17 @@ def touch_file(f):
         logging.error('Error: Could not write to file "' + f + '".')
     else:
         if basicConfig['fileperm'] is not None:
-            change_permissions(f, basicConfig['fileperm'])
+            _change_permissions(f, basicConfig['fileperm'])
 
 
-def change_permissions(p, perm):
+def _change_permissions(p, perm):
     try:
         os.chmod(p, perm)
     except OSError:
         logging.error('Unable to change permissions of "' + p + '".')
 
 
-def print_movie_list(q, l):
+def _print_movie_list(q, l):
     if len(l) > 0:
         header = 'Results for query "' + q + '":'
         print header
@@ -696,7 +685,7 @@ def print_movie_list(q, l):
         print "%2d: %s" % (c, t)
 
 
-def imdb_query(n):
+def _imdb_query(n):
 
     in_encoding = sys.stdin.encoding or "UTF-8"
     out_encoding = sys.stdout.encoding or "UTF-8"
@@ -718,12 +707,12 @@ def imdb_query(n):
 
     # If there is a movie in r whose name is exactly n, then we move it to the
     # top of the list.
-    r = move_to_top_if_exists(r, n)
+    r = _move_to_top_if_exists(r, n)
 
     return r
 
 
-def move_to_top_if_exists(r, n):
+def _move_to_top_if_exists(r, n):
     c = 0
     for m in r:
         if c > 0 and m.nice_title() == n:
@@ -736,7 +725,7 @@ def move_to_top_if_exists(r, n):
     return r
 
 
-def clean_name(s):
+def _clean_name(s):
 
     logging.debug('Determining clean name for "' + s + '"')
     info = PTN.parse(s)
@@ -746,12 +735,12 @@ def clean_name(s):
     return title
 
 
-def offline_notice_unknown(s):
+def _offline_notice_unknown(s):
     global notifications_unknown
     notifications_unknown.append(s)
 
 
-def offline_notice_renamed(a, b):
+def _offline_notice_renamed(a, b):
     global notifications_rename
     notifications_rename.append([a, b])
 
@@ -773,8 +762,8 @@ def print_offline_notifications():
         print_banner("Renamed directories", w)
         for p in notifications_rename:
             (a, b) = p
-            print(limit_string(a, w) + "\n" + sep +
-                  limit_string(b, w - len(sep)))
+            print(_limit_string(a, w) + "\n" + sep +
+                  _limit_string(b, w - len(sep)))
 
         print
         print str(len(notifications_rename)) + " directories renamed."
@@ -784,7 +773,7 @@ def print_offline_notifications():
     if len(notifications_unknown) > 0:
         print_banner("Directories without match", w)
         for d in notifications_unknown:
-            print limit_string(d, w)
+            print _limit_string(d, w)
 
     if notifications_nb_unchanged > 0:
         print str(notifications_nb_unchanged) + " directories unchanged."
@@ -803,51 +792,31 @@ def print_banner(s, w):
     print "=" * w
 
 
-def limit_string(s, l):
+def _limit_string(s, l):
     if len(s) <= l:
         return s + " " * (l - len(s))
     else:
         return s[0:l - 3] + "..."
 
 
-def strip_word(s, w):
-    """Removes all occurrences of the word ``w`` from the string ``s``. If there
-    are spaces on the left and the right, they will be compacted into a single
-    space after replacement.
-    The method is case-insensitive.
-    """
-
-    # Compile the regular expression and disable case-sensitivity.
-    wr1 = re.compile(" " + w + " ", re.I)
-    wr2 = re.compile(w, re.I)
-
-    # Case 1: Spaces on both sides.
-    s = wr1.sub(" ", s)
-
-    # All other cases: just remove it.
-    s = wr2.sub("", s)
-
-    return s
-
-
-def is_directory(d):
+def _is_directory(d):
     return os.path.exists(d) and os.path.isdir(d)
 
 
-def confirm(prompt=None, resp=False):
+def _confirm(prompt=None, resp=False):
         """prompts for yes or no response from the user. Returns True for yes and
         False for no.
 
         'resp' should be set to the default value assumed by the caller when
         user simply types ENTER.
 
-        >>> confirm(prompt='Create Directory?', resp=True)
+        >>> _confirm(prompt='Create Directory?', resp=True)
         Create Directory? [y]|n:
         True
-        >>> confirm(prompt='Create Directory?', resp=False)
+        >>> _confirm(prompt='Create Directory?', resp=False)
         Create Directory? [n]|y:
         False
-        >>> confirm(prompt='Create Directory?', resp=False)
+        >>> _confirm(prompt='Create Directory?', resp=False)
         Create Directory? [n]|y: y
         True
 
