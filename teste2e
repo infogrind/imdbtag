@@ -1,8 +1,8 @@
 #!/bin/bash
 
-VIRTUALENV="virtualenv"
 MKTEMP="mktemp"
 DEBUG=0
+PIPENV="pipenv"
 TESTMOVIE1="Fight.Club.1995.BluRay.720p.x264.DTS-SPARKS.mkv"
 TESTMOVIE2="Forrest.Gump.1994.DVDRip.DivX-CHD.avi"
 EXPECTED1="Fight Club (1999)"
@@ -57,7 +57,7 @@ fi
 trap abort SIGINT SIGTERM SIGKILL
 
 # Make sure all the required commands are there
-verify_command "$VIRTUALENV"
+verify_command "$PIPENV"
 verify_command "$MKTEMP"
 
 # Create a temporary working directory, it is where the virtualenv will be
@@ -73,16 +73,16 @@ debug "TEMPDIR: $TEMPDIR"
 
 MOVIEFILE1="$TEMPDIR"/"$TESTMOVIE1"
 MOVIEFILE2="$TEMPDIR"/"$TESTMOVIE2"
-IMDBTAG="$TEMPDIR"/bin/imdbtag
+IMDBTAG="imdbtag"
 touch "$MOVIEFILE1"
 touch "$MOVIEFILE2"
 
-echo "Creating virtual environment"
-"$VIRTUALENV" "$TEMPDIR" 2>&1 | sed 's/^/- /' \
-	|| die "Could not create virtual environment"
+#echo "Creating virtual environment"
+#"$PIPENV" install 2>&1 | sed 's/^/- /' \
+#	|| die "Could not create virtual environment"
 
 echo "Installing imdbtag"
-"$TEMPDIR"/bin/python setup.py install 2>&1 | sed 's/^/- /' \
+"$PIPENV" run python setup.py install 2>&1 | sed 's/^/- /' \
 	|| die "Could not install application"
 
 
@@ -92,12 +92,12 @@ echo "Installing imdbtag"
 
 echo "Executing $IMDBTAG in offline mode"
 	
-CMD="$IMDBTAG $VERBOSE -os $MOVIEFILE1"
+CMD="$PIPENV run $IMDBTAG $VERBOSE -os $MOVIEFILE1"
 debug "Command: '$CMD'"
 $CMD | sed 's/^/- /' \
 	|| die "Error running $CMD"
 
-CMD="$IMDBTAG $VERBOSE $MOVIEFILE2"
+CMD="$PIPENV run $IMDBTAG $VERBOSE $MOVIEFILE2"
 debug "Command: '$CMD'"
 echo -e "\n\nForrest Gump (1994) (comment)\n\n" | $CMD | sed 's/^/- /' \
 	|| die "Error running $CMD with input"

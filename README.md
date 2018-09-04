@@ -60,6 +60,7 @@ $ python setup.py install
                    Explicitly specify directory permissions. This works like -F but
                    applies to created directories. E.g., -D 775
 
+
 ## Running Locally
 
 To run the tool locally, e.g. for development, use `pipenv` (see e.g. [this
@@ -67,21 +68,39 @@ page](https://docs.python-guide.org/dev/virtualenvs/) for usage instructions).
 Run it as follows:
 
 ```sh
-pipenv install
-pipenv run python -c 'import imdbtag; imdbtag.main()'
+pipenv run python setup.py install
+pipenv run imdbtag
 ```
 
-## Requirements
+This will use `pipenv` to install a virtualenv, normally under `~/.local/share`.
+The first time you run it, it will take a bit longer because all the
+dependencies have to be installed.
 
-The following dependency will be installed automatically if you use the
-installation method recommended above.
 
-- [parse-torrent-name](https://github.com/divijbindlish/parse-torrent-name)
+## Testing
 
-## Quick API Self-Test
+### End-to-end Test
 
-To verify that the API works properly, perform the follwing steps within a
-python shell:
+Run the `teste2e` script:
 
-    import imdbtag
+```sh
+./teste2e
+```
+
+For the same reason as described under *Running Locally* above, this may take a
+bit longer the first time it is run.
+
+Requirements:
+
+* `mktemp` (should be included in standard Unix-like distributions, including
+  Mac OS)
+* `pipenv` (install it e.g. using `pip`)
+
+### Quick API Self-Test
+
+To verify that the API works properly, perform the following steps within a
+Python shell (this requires the script with all dependencies to be properly
+installed):
+
+    import imdbtag.apis.tmdbapi
     imdbtag.apis.tmdbapi._selftest()
