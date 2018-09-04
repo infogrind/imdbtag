@@ -7,7 +7,7 @@ import getopt
 import re
 
 # To use TheMovieDB.org
-from .apis import tmdbapi
+from apis import tmdbapi
 
 # Alternatively, to use IMDb, use the following import instead:
 # (However, know that as of today 2012-12-29, IMDB search doesn't work anymore
