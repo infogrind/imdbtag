@@ -22,7 +22,7 @@ setup(
         "python-Levenshtein"  # transitive dependency of tmdb
         ],
     entry_points={
-        "console_scripts": ["imdbtag = imdbtag.imdbtag:main"]
+        "console_scripts": ["imdbtag = imdbtag.cli:main"]
         },
     classifiers=[
         'Development Status :: 4 - Beta',
